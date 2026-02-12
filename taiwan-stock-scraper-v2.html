@@ -284,12 +284,20 @@
             <p><strong>⚙️ 系統狀態：</strong>正在檢查後端伺服器...</p>
         </div>
 
+        <!-- 診斷資訊（可隱藏） -->
+        <div style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-size: 12px; display: none;" id="debugInfo">
+            <strong>🔍 診斷資訊：</strong><br>
+            <span id="debugText"></span>
+            <button onclick="clearLocalStorage()" style="margin-top: 5px; padding: 3px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">清除 localStorage</button>
+        </div>
+
         <div class="info-box">
             <p><strong>📌 使用說明：</strong></p>
             <p>• 輸入股票代碼（如：2330 為台積電）<br>
                • 選擇日期區間（建議不超過 3 個月以加快速度）<br>
                • 勾選需要的資料類型<br>
-               • 點擊「開始抓取」即可獲取資料並下載 CSV 檔案</p>
+               • 點擊「開始抓取」即可獲取資料並下載 CSV 檔案<br>
+               • <small style="opacity: 0.7;">連線問題？<a href="#" onclick="showDebugInfo(); return false;" style="color: #667eea;">顯示診斷資訊</a></small></p>
         </div>
 
         <!-- API URL 設定 -->
@@ -369,6 +377,27 @@
             : CONFIG.API_BASE_URL;
 
         let collectedData = [];
+
+        // 診斷功能
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            const debugText = document.getElementById('debugText');
+            const storedUrl = localStorage.getItem('apiUrl');
+
+            debugText.innerHTML = `
+                Config API URL: ${CONFIG.API_BASE_URL}<br>
+                LocalStorage API URL: ${storedUrl || '(未設定)'}<br>
+                實際使用的 API URL: ${API_URL}<br>
+                ALLOW_MANUAL_CONFIG: ${CONFIG.ALLOW_MANUAL_CONFIG}
+            `;
+            debugDiv.style.display = 'block';
+        }
+
+        function clearLocalStorage() {
+            localStorage.removeItem('apiUrl');
+            alert('已清除 localStorage 的 API 設定，頁面將重新載入');
+            location.reload();
+        }
         
         // 儲存 API URL
         function saveApiUrl() {
