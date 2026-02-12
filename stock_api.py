@@ -122,7 +122,7 @@ def fetch_price_data(stock_code, start_date, end_date, collected_data):
                             '成交筆數': row[8]
                         })
             
-            time.sleep(1)  # 避免請求過快
+            time.sleep(0.3)  # 避免請求過快
             
         except Exception as e:
             print(f"Error fetching price data for {year}-{month:02d}: {e}")
@@ -176,8 +176,8 @@ def fetch_institutional_data(stock_code, start_date, end_date, collected_data):
                             '自營商買賣超': stock_data[11], # 自營商買賣超股數
                             '三大法人買賣超合計': stock_data[18] # 三大法人買賣超股數
                         })
-                
-                time.sleep(1.5)  # 三大法人 API 限制較嚴格
+
+                time.sleep(0.3)  # 減少延遲，避免請求超時
                 
             except Exception as e:
                 print(f"Error fetching institutional data for {date_param}: {e}")

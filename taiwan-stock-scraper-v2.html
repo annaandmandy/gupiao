@@ -506,8 +506,17 @@
             hidePreview();
             document.getElementById('downloadBtn').style.display = 'none';
             document.getElementById('fetchBtn').disabled = true;
-            
+
+            // 如果包含三大法人資料，顯示特別提示
+            if (dataTypes.includes('institutional')) {
+                document.getElementById('loadingText').textContent = '正在抓取資料，三大法人資料需要較長時間，請耐心等待...';
+            }
+
             try {
+                // 使用 AbortController 設定更長的超時時間
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 120秒超時
+
                 const response = await fetch(`${API_URL}/api/stock-data`, {
                     method: 'POST',
                     headers: {
@@ -518,8 +527,11 @@
                         startDate,
                         endDate,
                         dataTypes
-                    })
+                    }),
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
                 
                 const result = await response.json();
                 
@@ -538,9 +550,14 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showStatus('無法連接伺服器，請確認 Python 伺服器已啟動', 'error');
+                if (error.name === 'AbortError') {
+                    showStatus('請求超時，請嘗試縮短日期範圍或稍後再試', 'error');
+                } else {
+                    showStatus('無法連接伺服器，請確認網路連線或稍後再試', 'error');
+                }
             } finally {
                 showLoading(false);
+                document.getElementById('loadingText').textContent = '正在抓取資料，請稍候...';
                 document.getElementById('fetchBtn').disabled = false;
             }
         }
