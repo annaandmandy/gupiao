@@ -43,7 +43,14 @@ def get_stock_data():
 
         # 計算日期範圍，避免請求過大
         days_diff = (end_date - start_date).days
-        if days_diff > 90:  # 限制最多 90 天
+
+        # 如果包含三大法人資料，限制更嚴格（因為需要逐日請求）
+        if 'institutional' in data_types and days_diff > 30:
+            return jsonify({
+                'success': False,
+                'error': '查詢三大法人資料時，日期範圍不能超過 30 天（建議 7-14 天）'
+            }), 400
+        elif days_diff > 90:
             return jsonify({
                 'success': False,
                 'error': '日期範圍不能超過 90 天，請縮短查詢區間'
@@ -130,7 +137,7 @@ def fetch_price_data(stock_code, start_date, end_date, collected_data):
                             '成交筆數': row[8]
                         })
             
-            time.sleep(0.1)  # 最小延遲，提升速度
+            # 移除延遲，提升速度
             
         except Exception as e:
             print(f"Error fetching price data for {year}-{month:02d}: {e}")
@@ -185,7 +192,7 @@ def fetch_institutional_data(stock_code, start_date, end_date, collected_data):
                             '三大法人買賣超合計': stock_data[18] # 三大法人買賣超股數
                         })
 
-                time.sleep(0.1)  # 最小延遲，提升速度
+                # 移除延遲，提升速度
                 
             except Exception as e:
                 print(f"Error fetching institutional data for {date_param}: {e}")
