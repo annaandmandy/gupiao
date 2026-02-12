@@ -150,16 +150,14 @@ def fetch_institutional_data(stock_code, start_date, end_date, collected_data):
                             collected_data.append(existing_row)
                         
                         existing_row.update({
-                            '外資買進': stock_data[1],
-                            '外資賣出': stock_data[2],
-                            '外資買賣超': stock_data[3],
-                            '投信買進': stock_data[4],
-                            '投信賣出': stock_data[5],
-                            '投信買賣超': stock_data[6],
-                            '自營商買進': stock_data[7],
-                            '自營商賣出': stock_data[8],
-                            '自營商買賣超': stock_data[9],
-                            '三大法人買賣超合計': stock_data[10]
+                            '外資買進': stock_data[2],   # 外陸資買進股數(不含外資自營商)
+                            '外資賣出': stock_data[3],   # 外陸資賣出股數(不含外資自營商)
+                            '外資買賣超': stock_data[4], # 外陸資買賣超股數(不含外資自營商)
+                            '投信買進': stock_data[8],   # 投信買進股數
+                            '投信賣出': stock_data[9],   # 投信賣出股數
+                            '投信買賣超': stock_data[10], # 投信買賣超股數
+                            '自營商買賣超': stock_data[11], # 自營商買賣超股數
+                            '三大法人買賣超合計': stock_data[18] # 三大法人買賣超股數
                         })
                 
                 time.sleep(1.5)  # 三大法人 API 限制較嚴格
