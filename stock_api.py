@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
+from collections import OrderedDict
 import csv
 import io
 import time
@@ -52,11 +53,23 @@ def get_stock_data():
         
         # 按日期排序
         collected_data.sort(key=lambda x: x['日期'])
-        
+
+        # 重新排序欄位，確保日期在最前面
+        ordered_data = []
+        for row in collected_data:
+            ordered_row = OrderedDict()
+            ordered_row['日期'] = row['日期']
+            ordered_row['股票代碼'] = row['股票代碼']
+            # 添加其他欄位
+            for key, value in row.items():
+                if key not in ['日期', '股票代碼']:
+                    ordered_row[key] = value
+            ordered_data.append(ordered_row)
+
         return jsonify({
             'success': True,
-            'data': collected_data,
-            'count': len(collected_data)
+            'data': ordered_data,
+            'count': len(ordered_data)
         })
         
     except Exception as e:
@@ -93,7 +106,9 @@ def fetch_price_data(stock_code, start_date, end_date, collected_data):
                         # 找到或建立該日期的資料
                         existing_row = next((d for d in collected_data if d['日期'] == date_str), None)
                         if not existing_row:
-                            existing_row = {'日期': date_str, '股票代碼': stock_code}
+                            existing_row = OrderedDict()
+                            existing_row['日期'] = date_str
+                            existing_row['股票代碼'] = stock_code
                             collected_data.append(existing_row)
                         
                         existing_row.update({
@@ -146,7 +161,9 @@ def fetch_institutional_data(stock_code, start_date, end_date, collected_data):
                         
                         existing_row = next((d for d in collected_data if d['日期'] == date_str), None)
                         if not existing_row:
-                            existing_row = {'日期': date_str, '股票代碼': stock_code}
+                            existing_row = OrderedDict()
+                            existing_row['日期'] = date_str
+                            existing_row['股票代碼'] = stock_code
                             collected_data.append(existing_row)
                         
                         existing_row.update({
