@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股資料抓取工具 v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .date-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .checkbox-group {
+            margin-top: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-fetch {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-fetch:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            display: none;
+        }
+
+        .btn-download:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 87, 108, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .data-preview {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .data-preview h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #1565c0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .server-status {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .server-status p {
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 台股資料抓取工具 v2</h1>
+        <p class="subtitle">Taiwan Stock Data Scraper - Backend Version</p>
+
+        <div class="server-status" id="serverStatus">
+            <p><strong>⚙️ 系統狀態：</strong>正在檢查後端伺服器...</p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>📌 使用說明：</strong></p>
+            <p>• 輸入股票代碼（如：2330 為台積電）<br>
+               • 選擇日期區間（建議不超過 3 個月以加快速度）<br>
+               • 勾選需要的資料類型<br>
+               • 點擊「開始抓取」即可獲取資料並下載 CSV 檔案</p>
+        </div>
+
+        <!-- API URL 設定 -->
+        <div class="form-group" id="apiSettings" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;">
+            <label for="apiUrl">後端 API 網址（首次使用請設定）</label>
+            <input type="text" id="apiUrl" placeholder="例如：https://your-app.railway.app">
+            <button type="button" onclick="saveApiUrl()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">儲存設定</button>
+        </div>
+
+        <form id="stockForm">
+            <div class="form-group">
+                <label for="stockCode">股票代碼 *</label>
+                <input type="text" id="stockCode" placeholder="例如：2330（台積電）" required>
+            </div>
+
+            <div class="form-group">
+                <label>日期區間 *</label>
+                <div class="date-group">
+                    <div>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    <div>
+                        <input type="date" id="endDate" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>資料類型 *</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="dataType" value="price" checked>
+                        每日股價資料（開盤、收盤、最高、最低、成交量）
+                    </label>
+                    <label>
+                        <input type="checkbox" name="dataType" value="institutional">
+                        三大法人買賣超（外資、投信、自營商）
+                    </label>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-fetch" id="fetchBtn">🚀 開始抓取資料</button>
+                <button type="button" class="btn-download" id="downloadBtn">📥 下載 CSV 檔案</button>
+            </div>
+        </form>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;" id="loadingText">正在抓取資料，請稍候...</p>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="data-preview" id="dataPreview">
+            <h2>資料預覽</h2>
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 自動偵測 API URL：本地開發時使用 localhost，部署時使用環境變數或手動設定
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:5000'
+            : (localStorage.getItem('apiUrl') || 'YOUR_RAILWAY_API_URL_HERE');
+
+        let collectedData = [];
+        
+        // 儲存 API URL
+        function saveApiUrl() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            if (apiUrl) {
+                localStorage.setItem('apiUrl', apiUrl);
+                location.reload();
+            } else {
+                alert('請輸入有效的 API 網址');
+            }
+        }
+
+        // 顯示或隱藏 API 設定
+        function toggleApiSettings() {
+            const apiSettings = document.getElementById('apiSettings');
+            apiSettings.style.display = apiSettings.style.display === 'none' ? 'block' : 'none';
+            if (apiSettings.style.display === 'block') {
+                document.getElementById('apiUrl').value = localStorage.getItem('apiUrl') || '';
+            }
+        }
+
+        // 檢查伺服器狀態
+        async function checkServerStatus() {
+            // 如果不是本地環境且沒有設定 API URL，顯示設定介面
+            if (API_URL === 'YOUR_RAILWAY_API_URL_HERE') {
+                document.getElementById('serverStatus').innerHTML =
+                    '<p><strong>⚠️ 系統狀態：</strong>請先設定後端 API 網址。<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">設定 API</button></p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET'
+                });
+                if (response.ok) {
+                    document.getElementById('serverStatus').innerHTML =
+                        '<p style="color: #155724;"><strong>✅ 系統狀態：</strong>後端伺服器已就緒 <small style="opacity: 0.7;">(' + API_URL + ')</small> <button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 3px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">修改</button></p>';
+                    document.getElementById('serverStatus').style.background = '#d4edda';
+                    document.getElementById('serverStatus').style.borderLeft = '4px solid #28a745';
+                } else {
+                    throw new Error('Server not healthy');
+                }
+            } catch (error) {
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const message = isLocal
+                    ? '<p><strong>❌ 系統狀態：</strong>無法連接後端伺服器。請確認 Python 伺服器已啟動（執行 python stock_api.py）</p>'
+                    : '<p><strong>❌ 系統狀態：</strong>無法連接後端伺服器 (' + API_URL + ')。<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">修改設定</button></p>';
+                document.getElementById('serverStatus').innerHTML = message;
+            }
+        }
+        
+        // 設定預設日期
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            document.getElementById('endDate').valueAsDate = today;
+            document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
+            
+            checkServerStatus();
+        });
+
+        document.getElementById('stockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const stockCode = document.getElementById('stockCode').value.trim();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const dataTypes = Array.from(document.querySelectorAll('input[name="dataType"]:checked'))
+                .map(cb => cb.value);
+            
+            if (dataTypes.length === 0) {
+                showStatus('請至少選擇一種資料類型', 'error');
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                showStatus('開始日期不能晚於結束日期', 'error');
+                return;
+            }
+            
+            await fetchStockData(stockCode, startDate, endDate, dataTypes);
+        });
+
+        async function fetchStockData(stockCode, startDate, endDate, dataTypes) {
+            showLoading(true);
+            hideStatus();
+            hidePreview();
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('fetchBtn').disabled = true;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/stock-data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        stockCode,
+                        startDate,
+                        endDate,
+                        dataTypes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    collectedData = result.data;
+                    
+                    if (collectedData.length === 0) {
+                        showStatus('未能獲取資料，請確認股票代碼和日期區間是否正確', 'error');
+                    } else {
+                        showStatus(`成功獲取 ${collectedData.length} 筆資料！`, 'success');
+                        displayData(collectedData);
+                        document.getElementById('downloadBtn').style.display = 'block';
+                    }
+                } else {
+                    showStatus('抓取資料時發生錯誤：' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('無法連接伺服器，請確認 Python 伺服器已啟動', 'error');
+            } finally {
+                showLoading(false);
+                document.getElementById('fetchBtn').disabled = false;
+            }
+        }
+
+        function displayData(data) {
+            if (data.length === 0) return;
+            
+            const preview = document.getElementById('dataPreview');
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+            
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            const headers = Object.keys(data[0]);
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+            
+            const displayData = data.slice(0, 100);
+            displayData.forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    td.textContent = row[header] || '';
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+            
+            preview.style.display = 'block';
+            
+            if (data.length > 100) {
+                showStatus(`顯示前 100 筆資料，共 ${data.length} 筆（完整資料請下載 CSV）`, 'info');
+            }
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (collectedData.length === 0) return;
+            
+            const stockCode = document.getElementById('stockCode').value.trim();
+            const startDate = document.getElementById('startDate').value.replace(/-/g, '');
+            const endDate = document.getElementById('endDate').value.replace(/-/g, '');
+            
+            const csv = convertToCSV(collectedData);
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${stockCode}_${startDate}_${endDate}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus('CSV 檔案已開始下載！', 'success');
+        });
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            const headers = Object.keys(data[0]);
+            const csvRows = [];
+            
+            csvRows.push(headers.join(','));
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header] || '';
+                    return `"${value}"`;
+                });
+                csvRows.push(values.join(','));
+            });
+            
+            return csvRows.join('\n');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        function hidePreview() {
+            document.getElementById('dataPreview').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
