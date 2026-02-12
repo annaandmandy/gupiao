@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
@@ -7,6 +7,7 @@ import csv
 import io
 import time
 import os
+import json
 
 app = Flask(__name__)
 # 允許所有來源的 CORS 請求（生產環境建議限制特定網域）
@@ -139,11 +140,21 @@ def get_stock_data():
 
             ordered_data.append(ordered_row)
 
-        return jsonify({
+        # 使用 json.dumps 並確保保持鍵的順序
+        response_data = {
             'success': True,
             'data': ordered_data,
             'count': len(ordered_data)
-        })
+        }
+
+        # 手動序列化以保持 OrderedDict 的順序
+        json_str = json.dumps(response_data, ensure_ascii=False, separators=(',', ':'))
+
+        return Response(
+            json_str,
+            mimetype='application/json',
+            headers={'Content-Type': 'application/json; charset=utf-8'}
+        )
         
     except Exception as e:
         return jsonify({
