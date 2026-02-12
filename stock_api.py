@@ -10,9 +10,13 @@ import os
 app = Flask(__name__)
 # 允許所有來源的 CORS 請求（生產環境建議限制特定網域）
 CORS(app, resources={
-    r"/api/*": {"origins": "*"},
-    r"/health": {"origins": "*"},
-    r"/": {"origins": "*"}
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "expose_headers": ["Content-Type"],
+        "supports_credentials": False
+    }
 })
 
 def parse_roc_date(roc_date_str):
