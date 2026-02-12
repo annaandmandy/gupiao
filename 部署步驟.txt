@@ -1,0 +1,75 @@
+🚀 台股資料抓取工具 - 快速部署步驟
+
+═══════════════════════════════════════════════════
+步驟 1：部署後端到 Railway
+═══════════════════════════════════════════════════
+
+1. 前往 https://railway.app/ 註冊登入（用 GitHub 帳號）
+
+2. 點擊「New Project」→「Deploy from GitHub repo」
+
+3. 選擇你的儲存庫（gupiao）
+
+4. Railway 會自動偵測 Python 專案並開始部署
+
+5. 等待部署完成，記下你的 Railway URL
+   例如：https://gupiao-production.up.railway.app
+
+═══════════════════════════════════════════════════
+步驟 2：修改前端設定檔
+═══════════════════════════════════════════════════
+
+1. 編輯 config.js 檔案
+
+2. 將 API_BASE_URL 改為你的 Railway URL：
+
+   const CONFIG = {
+       API_BASE_URL: 'https://gupiao-production.up.railway.app',
+       ALLOW_MANUAL_CONFIG: true,
+       API_VERSION: '2.0'
+   };
+
+3. 儲存檔案
+
+═══════════════════════════════════════════════════
+步驟 3：推送到 GitHub 並啟用 Pages
+═══════════════════════════════════════════════════
+
+1. 推送修改到 GitHub：
+   git add config.js
+   git commit -m "Update API URL for production"
+   git push
+
+2. 進入 GitHub 儲存庫設定（Settings）
+
+3. 找到「Pages」選項
+
+4. Source 選擇「main」分支
+
+5. 點擊「Save」
+
+6. 等待 GitHub Pages 部署完成（約 1-2 分鐘）
+
+7. 開啟網頁測試：
+   https://YOUR_USERNAME.github.io/gupiao/taiwan-stock-scraper-v2.html
+
+═══════════════════════════════════════════════════
+完成！🎉
+═══════════════════════════════════════════════════
+
+現在你的台股資料抓取工具已經可以使用了！
+
+• 後端在 Railway 上運行
+• 前端在 GitHub Pages 上託管
+• 可以開始抓取股票資料並下載 CSV 了
+
+═══════════════════════════════════════════════════
+config.js 設定說明
+═══════════════════════════════════════════════════
+
+API_BASE_URL:
+  你的 Railway 後端網址
+
+ALLOW_MANUAL_CONFIG:
+  true  = 允許用戶在網頁上手動修改 API URL（適合測試多個後端）
+  false = 只能使用 config.js 設定的網址（適合生產環境）

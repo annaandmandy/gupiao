@@ -1,5 +1,7 @@
 # 📊 台股資料抓取工具
 
+URL: https://annaandmandy.github.io/gupiao/taiwan-stock-scraper-v2.html
+
 一個簡單易用的台股資料抓取工具，可以下載每日股價（開高低收）和三大法人買賣超資料為 CSV 檔案。
 
 ## ✨ 功能特色

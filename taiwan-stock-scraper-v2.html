@@ -359,11 +359,14 @@
         </div>
     </div>
 
+    <!-- 設定檔 -->
+    <script src="config.js"></script>
+
     <script>
-        // 自動偵測 API URL：本地開發時使用 localhost，部署時使用環境變數或手動設定
-        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:5000'
-            : (localStorage.getItem('apiUrl') || 'YOUR_RAILWAY_API_URL_HERE');
+        // 從 config.js 取得 API URL，優先使用用戶手動設定的 URL
+        const API_URL = (CONFIG.ALLOW_MANUAL_CONFIG && localStorage.getItem('apiUrl'))
+            ? localStorage.getItem('apiUrl')
+            : CONFIG.API_BASE_URL;
 
         let collectedData = [];
         
@@ -380,19 +383,27 @@
 
         // 顯示或隱藏 API 設定
         function toggleApiSettings() {
+            // 檢查是否允許手動設定
+            if (!CONFIG.ALLOW_MANUAL_CONFIG) {
+                alert('此部署不允許修改 API 設定');
+                return;
+            }
+
             const apiSettings = document.getElementById('apiSettings');
             apiSettings.style.display = apiSettings.style.display === 'none' ? 'block' : 'none';
             if (apiSettings.style.display === 'block') {
-                document.getElementById('apiUrl').value = localStorage.getItem('apiUrl') || '';
+                document.getElementById('apiUrl').value = localStorage.getItem('apiUrl') || CONFIG.API_BASE_URL;
             }
         }
 
         // 檢查伺服器狀態
         async function checkServerStatus() {
-            // 如果不是本地環境且沒有設定 API URL，顯示設定介面
-            if (API_URL === 'YOUR_RAILWAY_API_URL_HERE') {
-                document.getElementById('serverStatus').innerHTML =
-                    '<p><strong>⚠️ 系統狀態：</strong>請先設定後端 API 網址。<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">設定 API</button></p>';
+            // 如果沒有設定 API URL，顯示設定介面
+            if (API_URL === 'YOUR_RAILWAY_API_URL_HERE' || !API_URL) {
+                const message = CONFIG.ALLOW_MANUAL_CONFIG
+                    ? '<p><strong>⚠️ 系統狀態：</strong>請先設定後端 API 網址。<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">設定 API</button></p>'
+                    : '<p><strong>⚠️ 系統狀態：</strong>API 網址尚未設定。請聯絡管理員或參考 config.js 設定。</p>';
+                document.getElementById('serverStatus').innerHTML = message;
                 return;
             }
 
@@ -401,8 +412,11 @@
                     method: 'GET'
                 });
                 if (response.ok) {
+                    const modifyButton = CONFIG.ALLOW_MANUAL_CONFIG
+                        ? '<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 3px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">修改</button>'
+                        : '';
                     document.getElementById('serverStatus').innerHTML =
-                        '<p style="color: #155724;"><strong>✅ 系統狀態：</strong>後端伺服器已就緒 <small style="opacity: 0.7;">(' + API_URL + ')</small> <button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 3px 8px; font-size: 12px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer;">修改</button></p>';
+                        '<p style="color: #155724;"><strong>✅ 系統狀態：</strong>後端伺服器已就緒 <small style="opacity: 0.7;">(' + API_URL + ')</small> ' + modifyButton + '</p>';
                     document.getElementById('serverStatus').style.background = '#d4edda';
                     document.getElementById('serverStatus').style.borderLeft = '4px solid #28a745';
                 } else {
@@ -410,9 +424,15 @@
                 }
             } catch (error) {
                 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                const message = isLocal
-                    ? '<p><strong>❌ 系統狀態：</strong>無法連接後端伺服器。請確認 Python 伺服器已啟動（執行 python stock_api.py）</p>'
-                    : '<p><strong>❌ 系統狀態：</strong>無法連接後端伺服器 (' + API_URL + ')。<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">修改設定</button></p>';
+                let message;
+                if (isLocal) {
+                    message = '<p><strong>❌ 系統狀態：</strong>無法連接後端伺服器。請確認 Python 伺服器已啟動（執行 python stock_api.py）</p>';
+                } else {
+                    const modifyButton = CONFIG.ALLOW_MANUAL_CONFIG
+                        ? '<button onclick="toggleApiSettings()" style="margin-left: 10px; padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">修改設定</button>'
+                        : '';
+                    message = '<p><strong>❌ 系統狀態：</strong>無法連接後端伺服器 (' + API_URL + ')。' + modifyButton + '</p>';
+                }
                 document.getElementById('serverStatus').innerHTML = message;
             }
         }
