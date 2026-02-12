@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS 測試</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 CORS 連線測試</h1>
+
+    <p>測試 Railway API 的 CORS 設定</p>
+
+    <button onclick="testHealth()">測試 /health</button>
+    <button onclick="testStockData()">測試 /api/stock-data</button>
+    <button onclick="clearCache()">清除快取並重新載入</button>
+
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'https://web-production-ae345.up.railway.app';
+
+        function addResult(title, content, success) {
+            const div = document.createElement('div');
+            div.className = 'result ' + (success ? 'success' : 'error');
+            div.innerHTML = `<strong>${title}</strong>\n${content}`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function testHealth() {
+            try {
+                console.log('Testing /health...');
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                const data = await response.json();
+                addResult('✅ /health 測試成功', JSON.stringify(data, null, 2), true);
+            } catch (error) {
+                addResult('❌ /health 測試失敗', error.toString(), false);
+            }
+        }
+
+        async function testStockData() {
+            try {
+                console.log('Testing /api/stock-data...');
+                const response = await fetch(`${API_URL}/api/stock-data`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        stockCode: '2330',
+                        startDate: '2024-01-01',
+                        endDate: '2024-01-02',
+                        dataTypes: ['price']
+                    })
+                });
+                const data = await response.json();
+                addResult('✅ /api/stock-data 測試成功',
+                    `成功獲取 ${data.count} 筆資料\n${JSON.stringify(data.data[0], null, 2)}`,
+                    true);
+            } catch (error) {
+                addResult('❌ /api/stock-data 測試失敗', error.toString(), false);
+                console.error('Detailed error:', error);
+            }
+        }
+
+        function clearCache() {
+            if (confirm('這將清除快取並重新載入頁面，確定嗎？')) {
+                // 清除 localStorage
+                localStorage.clear();
+                // 清除 sessionStorage
+                sessionStorage.clear();
+                // 強制重新載入
+                location.reload(true);
+            }
+        }
+
+        // 頁面載入時自動測試
+        window.addEventListener('DOMContentLoaded', () => {
+            addResult('ℹ️ 資訊', `API URL: ${API_URL}\n瀏覽器: ${navigator.userAgent}`, true);
+        });
+    </script>
+</body>
+</html>
