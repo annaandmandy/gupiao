@@ -367,11 +367,17 @@
         </div>
     </div>
 
-    <!-- 設定檔 -->
-    <script src="config.js"></script>
-
     <script>
-        // 從 config.js 取得 API URL，優先使用用戶手動設定的 URL
+        // 設定 API URL
+        const CONFIG = {
+            API_BASE_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                ? 'http://localhost:5000'
+                : 'https://web-production-ae345.up.railway.app',
+            ALLOW_MANUAL_CONFIG: true,
+            API_VERSION: '2.0'
+        };
+
+        // 從 config 取得 API URL，優先使用用戶手動設定的 URL
         const API_URL = (CONFIG.ALLOW_MANUAL_CONFIG && localStorage.getItem('apiUrl'))
             ? localStorage.getItem('apiUrl')
             : CONFIG.API_BASE_URL;
