@@ -525,6 +525,7 @@
 
                 const response = await fetch(`${API_URL}/api/stock-data`, {
                     method: 'POST',
+                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json'
                     },
