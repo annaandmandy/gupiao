@@ -81,16 +81,52 @@ def get_stock_data():
         if 'volume' in data_types:
             collected_data = calculate_volume_analysis(collected_data)
 
-        # 重新排序欄位，確保日期在最前面
+        # 重新排序欄位，按類別組織（日期最左邊）
         ordered_data = []
+
+        # 定義欄位順序（按類別分組）
+        column_order = [
+            # 基本資訊
+            '日期', '股票代碼',
+
+            # 價格資料
+            '開盤價', '最高價', '最低價', '收盤價', '漲跌價差', '漲跌幅(%)',
+
+            # 成交量基本資料
+            '成交股數', '成交金額', '成交筆數',
+
+            # 成交量分析
+            '成交量(億股)', '量變化率(%)', '量比',
+
+            # 技術指標
+            'MA5', 'MA10', 'MA20',
+
+            # 三大法人 - 外資
+            '外資買進', '外資賣出', '外資買賣超',
+
+            # 三大法人 - 投信
+            '投信買進', '投信賣出', '投信買賣超',
+
+            # 三大法人 - 自營商與合計
+            '自營商買賣超', '三大法人買賣超合計',
+
+            # 基本面指標
+            '本益比', '殖利率(%)', '股價淨值比', '股利年度', '財報年季'
+        ]
+
         for row in collected_data:
             ordered_row = OrderedDict()
-            ordered_row['日期'] = row['日期']
-            ordered_row['股票代碼'] = row['股票代碼']
-            # 添加其他欄位
+
+            # 按照定義的順序添加欄位（如果存在）
+            for col in column_order:
+                if col in row:
+                    ordered_row[col] = row[col]
+
+            # 添加任何未在預定義列表中的欄位（以防萬一）
             for key, value in row.items():
-                if key not in ['日期', '股票代碼']:
+                if key not in ordered_row:
                     ordered_row[key] = value
+
             ordered_data.append(ordered_row)
 
         return jsonify({
