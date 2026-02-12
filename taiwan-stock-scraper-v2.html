@@ -294,9 +294,10 @@
         <div class="info-box">
             <p><strong>📌 使用說明：</strong></p>
             <p>• 輸入股票代碼（如：2330 為台積電）<br>
-               • 選擇日期區間（建議不超過 3 個月以加快速度）<br>
-               • 勾選需要的資料類型<br>
+               • 選擇日期區間（<strong>三大法人資料建議不超過 14 天</strong>，其他資料不超過 3 個月）<br>
+               • 勾選需要的資料類型（可多選）<br>
                • 點擊「開始抓取」即可獲取資料並下載 CSV 檔案<br>
+               • <strong>新功能：</strong>基本面指標、技術指標、成交量分析<br>
                • <small style="opacity: 0.7;">連線問題？<a href="#" onclick="showDebugInfo(); return false;" style="color: #667eea;">顯示診斷資訊</a></small></p>
         </div>
 
@@ -335,6 +336,18 @@
                     <label>
                         <input type="checkbox" name="dataType" value="institutional">
                         三大法人買賣超（外資、投信、自營商）
+                    </label>
+                    <label>
+                        <input type="checkbox" name="dataType" value="fundamental">
+                        基本面指標（本益比、殖利率、股價淨值比）
+                    </label>
+                    <label>
+                        <input type="checkbox" name="dataType" value="technical">
+                        技術指標（MA5/MA10/MA20 移動平均線、漲跌幅%）
+                    </label>
+                    <label>
+                        <input type="checkbox" name="dataType" value="volume">
+                        成交量分析（量變化率、量比、成交量億股）
                     </label>
                 </div>
             </div>

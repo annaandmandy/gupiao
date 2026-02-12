@@ -65,9 +65,21 @@ def get_stock_data():
         # 獲取三大法人資料
         if 'institutional' in data_types:
             collected_data = fetch_institutional_data(stock_code, start_date, end_date, collected_data)
-        
+
+        # 獲取基本面指標
+        if 'fundamental' in data_types:
+            collected_data = fetch_fundamental_data(stock_code, start_date, end_date, collected_data)
+
         # 按日期排序
         collected_data.sort(key=lambda x: x['日期'])
+
+        # 計算技術指標
+        if 'technical' in data_types:
+            collected_data = calculate_technical_indicators(collected_data)
+
+        # 計算成交量分析
+        if 'volume' in data_types:
+            collected_data = calculate_volume_analysis(collected_data)
 
         # 重新排序欄位，確保日期在最前面
         ordered_data = []
@@ -199,6 +211,137 @@ def fetch_institutional_data(stock_code, start_date, end_date, collected_data):
         
         current += timedelta(days=1)
     
+    return collected_data
+
+def fetch_fundamental_data(stock_code, start_date, end_date, collected_data):
+    """獲取基本面指標（本益比、殖利率、股價淨值比）"""
+    current = start_date
+
+    while current <= end_date:
+        date_param = current.strftime('%Y%m%d')
+        url = f"https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?date={date_param}&selectType=ALL&response=json"
+
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+            result = response.json()
+
+            if result.get('stat') == 'OK' and result.get('data'):
+                # 找到對應股票的資料
+                stock_data = next((row for row in result['data'] if row[0] == stock_code), None)
+
+                if stock_data:
+                    date_str = format_date(current)
+
+                    existing_row = next((d for d in collected_data if d['日期'] == date_str), None)
+                    if not existing_row:
+                        existing_row = OrderedDict()
+                        existing_row['日期'] = date_str
+                        existing_row['股票代碼'] = stock_code
+                        collected_data.append(existing_row)
+
+                    existing_row.update({
+                        '殖利率(%)': stock_data[2],      # 殖利率(%)
+                        '股利年度': stock_data[3],        # 股利年度
+                        '本益比': stock_data[4],          # 本益比
+                        '股價淨值比': stock_data[5],      # 股價淨值比
+                        '財報年季': stock_data[6]         # 財報年/季
+                    })
+
+        except Exception as e:
+            print(f"Error fetching fundamental data for {date_param}: {e}")
+
+        current += timedelta(days=1)
+
+    return collected_data
+
+def calculate_technical_indicators(collected_data):
+    """計算技術指標（移動平均線、漲跌幅）"""
+    if not collected_data:
+        return collected_data
+
+    # 需要有收盤價才能計算
+    for i, row in enumerate(collected_data):
+        # 計算漲跌幅百分比
+        if '收盤價' in row and '漲跌價差' in row:
+            try:
+                close = float(row['收盤價'].replace(',', ''))
+                change = float(row['漲跌價差'].replace(',', ''))
+                if close - change != 0:
+                    change_pct = (change / (close - change)) * 100
+                    row['漲跌幅(%)'] = f"{change_pct:.2f}"
+            except (ValueError, ZeroDivisionError):
+                pass
+
+        # 計算移動平均線（5日、10日、20日）
+        if '收盤價' in row:
+            for period in [5, 10, 20]:
+                if i >= period - 1:
+                    prices = []
+                    for j in range(i - period + 1, i + 1):
+                        if '收盤價' in collected_data[j]:
+                            try:
+                                price = float(collected_data[j]['收盤價'].replace(',', ''))
+                                prices.append(price)
+                            except ValueError:
+                                pass
+
+                    if len(prices) == period:
+                        ma = sum(prices) / period
+                        row[f'MA{period}'] = f"{ma:.2f}"
+
+    return collected_data
+
+def calculate_volume_analysis(collected_data):
+    """計算成交量分析（量變化率、量比）"""
+    if not collected_data:
+        return collected_data
+
+    for i, row in enumerate(collected_data):
+        # 計算量變化率（與前一日比較）
+        if i > 0 and '成交股數' in row and '成交股數' in collected_data[i-1]:
+            try:
+                current_vol = float(row['成交股數'].replace(',', ''))
+                prev_vol = float(collected_data[i-1]['成交股數'].replace(',', ''))
+                if prev_vol != 0:
+                    vol_change = ((current_vol - prev_vol) / prev_vol) * 100
+                    row['量變化率(%)'] = f"{vol_change:.2f}"
+            except (ValueError, ZeroDivisionError):
+                pass
+
+        # 計算量比（5日平均量）
+        if '成交股數' in row and i >= 4:
+            volumes = []
+            for j in range(i - 4, i + 1):
+                if '成交股數' in collected_data[j]:
+                    try:
+                        vol = float(collected_data[j]['成交股數'].replace(',', ''))
+                        volumes.append(vol)
+                    except ValueError:
+                        pass
+
+            if len(volumes) == 5:
+                avg_vol = sum(volumes) / 5
+                try:
+                    current_vol = float(row['成交股數'].replace(',', ''))
+                    if avg_vol != 0:
+                        vol_ratio = current_vol / avg_vol
+                        row['量比'] = f"{vol_ratio:.2f}"
+                except (ValueError, ZeroDivisionError):
+                    pass
+
+        # 計算換手率（需要流通股數，這裡暫時使用成交股數/10億作為簡化）
+        # 注意：真實換手率需要從其他API獲取實際流通股數
+        if '成交股數' in row:
+            try:
+                volume = float(row['成交股數'].replace(',', ''))
+                # 這是簡化計算，實際應該用實際流通股數
+                row['成交量(億股)'] = f"{volume / 100000000:.2f}"
+            except ValueError:
+                pass
+
     return collected_data
 
 @app.route('/')
