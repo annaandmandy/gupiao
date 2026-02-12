@@ -73,6 +73,19 @@ def get_stock_data():
         # 按日期排序
         collected_data.sort(key=lambda x: x['日期'])
 
+        # 如果沒有資料，返回更詳細的錯誤訊息
+        if len(collected_data) == 0:
+            return jsonify({
+                'success': False,
+                'error': f'查詢期間 {start_date.strftime("%Y-%m-%d")} 至 {end_date.strftime("%Y-%m-%d")} 無資料。可能原因：1) 股票代碼不存在 2) 查詢日期為週末或假日 3) 日期太新（資料通常延遲1-2天）4) 股票已下市',
+                'debug_info': {
+                    'stock_code': stock_code,
+                    'start_date': start_date.strftime('%Y-%m-%d'),
+                    'end_date': end_date.strftime('%Y-%m-%d'),
+                    'data_types': data_types
+                }
+            }), 404
+
         # 計算技術指標
         if 'technical' in data_types:
             collected_data = calculate_technical_indicators(collected_data)
@@ -117,15 +130,12 @@ def get_stock_data():
         for row in collected_data:
             ordered_row = OrderedDict()
 
-            # 按照定義的順序添加欄位（如果存在）
+            # 嚴格按照定義的順序添加欄位（如果存在）
             for col in column_order:
                 if col in row:
                     ordered_row[col] = row[col]
 
-            # 添加任何未在預定義列表中的欄位（以防萬一）
-            for key, value in row.items():
-                if key not in ordered_row:
-                    ordered_row[key] = value
+            # 注意：我們不添加未定義的欄位，以確保順序完全一致
 
             ordered_data.append(ordered_row)
 

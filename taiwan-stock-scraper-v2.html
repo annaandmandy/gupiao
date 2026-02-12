@@ -643,20 +643,27 @@
 
         function convertToCSV(data) {
             if (data.length === 0) return '';
-            
+
+            // 使用第一筆資料的欄位順序（後端已經排序好）
+            // Object.keys() 在現代瀏覽器中會保持插入順序
             const headers = Object.keys(data[0]);
+
             const csvRows = [];
-            
+
+            // 添加標題列
             csvRows.push(headers.join(','));
-            
+
+            // 添加資料列
             data.forEach(row => {
                 const values = headers.map(header => {
                     const value = row[header] || '';
-                    return `"${value}"`;
+                    // 處理包含逗號、引號或換行的值
+                    const escaped = String(value).replace(/"/g, '""');
+                    return `"${escaped}"`;
                 });
                 csvRows.push(values.join(','));
             });
-            
+
             return csvRows.join('\n');
         }
 
