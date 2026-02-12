@@ -9,7 +9,11 @@ import os
 
 app = Flask(__name__)
 # 允許所有來源的 CORS 請求（生產環境建議限制特定網域）
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={
+    r"/api/*": {"origins": "*"},
+    r"/health": {"origins": "*"},
+    r"/": {"origins": "*"}
+})
 
 def parse_roc_date(roc_date_str):
     """轉換民國日期為西元日期"""
